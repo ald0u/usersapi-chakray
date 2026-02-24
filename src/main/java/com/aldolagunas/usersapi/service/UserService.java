@@ -5,6 +5,8 @@ import com.aldolagunas.usersapi.model.User;
 import com.aldolagunas.usersapi.repository.UserRepository;
 import com.aldolagunas.usersapi.util.DateUtil;
 import com.aldolagunas.usersapi.util.EncryptionUtil;
+import jakarta.validation.ConstraintViolation;
+import jakarta.validation.Validator;
 import org.springframework.stereotype.Service;
 
 import java.util.Comparator;
@@ -17,10 +19,12 @@ import java.util.UUID;
 public class UserService {
     private final UserRepository userRepository;
     private final EncryptionUtil encryptionUtil;
+    private final Validator validator;
 
-    public UserService(UserRepository userRepository, EncryptionUtil encryptionUtil) {
+    public UserService(UserRepository userRepository, EncryptionUtil encryptionUtil, Validator validator) {
         this.userRepository = userRepository;
         this.encryptionUtil = encryptionUtil;
+        this.validator = validator;
     }
 
     public List<User> getAllUsers(String sortedBy, String filter) {
@@ -100,11 +104,23 @@ public class UserService {
                     user.setTaxId(taxId);
                 }
                 case "password" -> user.setPassword(encryptionUtil.encrypt((String) value));
-                default -> { }
+                default -> throw new IllegalArgumentException("Field not allowed: " + key);
             }
         });
 
+        validateUser(user);
         return userRepository.save(user);
+    }
+
+    private void validateUser(User user) {
+        var violations = validator.validate(user);
+        if (!violations.isEmpty()) {
+            String message = violations.stream()
+                    .map(ConstraintViolation::getMessage)
+                    .findFirst()
+                    .orElse("Validation error");
+            throw new IllegalArgumentException(message);
+        }
     }
 
     public void deleteUser(UUID id) {

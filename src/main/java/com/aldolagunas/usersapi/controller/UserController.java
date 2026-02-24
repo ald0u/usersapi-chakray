@@ -55,6 +55,8 @@ public class UserController {
             return ResponseEntity.ok(userService.updateUser(id, updates));
         } catch (NoSuchElementException e) {
             return ResponseEntity.notFound().build();
+        } catch (IllegalArgumentException e) {
+            return ResponseEntity.badRequest().build();
         }
     }
 
