@@ -1,0 +1,10 @@
+spring:
+  application:
+    name: usersapi
+
+server:
+  port: 8080
+
+app:
+  encryption:
+    aes-secret-key: ChakrayUsersApiAes256SecretKey!
